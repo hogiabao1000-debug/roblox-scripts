@@ -1,0 +1,224 @@
+-- Скрипт для Anime Fighters Simulator: создание GUI
+-- Требуется executor с поддержкой loadstring и game:HttpGet
+-- Вставьте в executor при запуске игры
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local CoreGui = game:GetService("CoreGui")
+
+-- Загрузка библиотеки Rayfield
+local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/shlexware/Rayfield/main/source'))()
+getgenv().SecureMode = true
+
+-- Создание окна
+local Window = Rayfield:CreateWindow({
+    Name = "Anime Fighters Simulator - GUI",
+    LoadingTitle = "Anime Fighters Simulator",
+    LoadingSubtitle = "by script",
+    ConfigurationSaving = {
+        Enabled = true,
+        FolderName = "AFS_GUI",
+        FileName = "AFS_Config"
+    },
+    KeySystem = false
+})
+
+-- Создание вкладок
+local TabMain = Window:CreateTab("Main")
+local TabTeleport = Window:CreateTab("Teleport")
+local TabVisual = Window:CreateTab("Visual")
+local TabMisc = Window:CreateTab("Misc")
+
+-- Вкладка Main
+local SectionMain = TabMain:CreateSection("Основные функции")
+
+local ToggleAutoFarm = TabMain:CreateToggle({
+    Name = "Auto Farm Mobs",
+    CurrentValue = false,
+    Flag = "AutoFarm",
+    Callback = function(Value)
+        getgenv().AutoFarm = Value
+        if Value then
+            task.spawn(function()
+                while getgenv().AutoFarm do
+                    task.wait(0.1)
+                    local Character = LocalPlayer.Character
+                    if Character and Character:FindFirstChild("HumanoidRootPart") then
+                        for _, mob in ipairs(workspace:GetChildren()) do
+                            if mob:FindFirstChild("Humanoid") and mob:FindFirstChild("HumanoidRootPart") and mob ~= Character then
+                                local Humanoid = mob:FindFirstChild("Humanoid")
+                                if Humanoid and Humanoid.Health > 0 then
+                                    Character.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0)
+                                    break
+                                end
+                            end
+                        end
+                    end
+                end
+            end)
+        end
+    end
+})
+
+local ToggleAutoTrain = TabMain:CreateToggle({
+    Name = "Auto Train Stats",
+    CurrentValue = false,
+    Flag = "AutoTrain",
+    Callback = function(Value)
+        getgenv().AutoTrain = Value
+        if Value then
+            task.spawn(function()
+                while getgenv().AutoTrain do
+                    task.wait(0.5)
+                    local Character = LocalPlayer.Character
+                    if Character and Character:FindFirstChild("HumanoidRootPart") then
+                        local TrainZone = workspace:FindFirstChild("TrainingArea")
+                        if TrainZone then
+                            Character.HumanoidRootPart.CFrame = TrainZone.CFrame
+                        end
+                    end
+                end
+            end)
+        end
+    end
+})
+
+local ToggleAutoClick = TabMain:CreateToggle({
+    Name = "Auto Click",
+    CurrentValue = false,
+    Flag = "AutoClick",
+    Callback = function(Value)
+        getgenv().AutoClick = Value
+        if Value then
+            task.spawn(function()
+                while getgenv().AutoClick do
+                    task.wait(0.05)
+                    local Character = LocalPlayer.Character
+                    if Character then
+                        local Tool = Character:FindFirstChildOfClass("Tool")
+                        if Tool and Tool:FindFirstChild("RemoteEvent") then
+                            Tool.RemoteEvent:FireServer()
+                        end
+                    end
+                end
+            end)
+        end
+    end
+})
+
+-- Вкладка Teleport
+local SectionTeleport = TabTeleport:CreateSection("Телепорты")
+
+local DropdownZone = TabTeleport:CreateDropdown({
+    Name = "Select Zone",
+    Options = {"Zone 1", "Zone 2", "Zone 3", "Zone 4", "Zone 5"},
+    CurrentOption = {"Zone 1"},
+    Flag = "SelectedZone",
+    Callback = function(Option)
+        getgenv().SelectedZone = Option
+    end
+})
+
+local ButtonTeleport = TabTeleport:CreateButton({
+    Name = "Teleport to Zone",
+    Callback = function()
+        local ZoneName = getgenv().SelectedZone and getgenv().SelectedZone[1] or "Zone 1"
+        local Character = LocalPlayer.Character
+        if Character and Character:FindFirstChild("HumanoidRootPart") then
+            local Zone = workspace:FindFirstChild(ZoneName)
+            if Zone then
+                Character.HumanoidRootPart.CFrame = Zone.CFrame * CFrame.new(0, 5, 0)
+                Rayfield:Notify({
+                    Title = "Teleport",
+                    Content = "Teleported to " .. ZoneName,
+                    Duration = 3
+                })
+            end
+        end
+    end
+})
+
+-- Вкладка Visual
+local SectionVisual = TabVisual:CreateSection("Визуальные функции")
+
+local ToggleESP = TabVisual:CreateToggle({
+    Name = "ESP Mobs",
+    CurrentValue = false,
+    Flag = "ESP",
+    Callback = function(Value)
+        getgenv().ESP = Value
+    end
+})
+
+local SliderESP = TabVisual:CreateSlider({
+    Name = "ESP Distance",
+    Range = {10, 500},
+    Increment = 10,
+    Suffix = " studs",
+    CurrentValue = 100,
+    Flag = "ESPDistance",
+    Callback = function(Value)
+        getgenv().ESPDistance = Value
+    end
+})
+
+-- Вкладка Misc
+local SectionMisc = TabMisc:CreateSection("Разное")
+
+local ToggleAntiAFK = TabMisc:CreateToggle({
+    Name = "Anti AFK",
+    CurrentValue = true,
+    Flag = "AntiAFK",
+    Callback = function(Value)
+        getgenv().AntiAFK = Value
+    end
+})
+
+local SliderWalkSpeed = TabMisc:CreateSlider({
+    Name = "WalkSpeed",
+    Range = {16, 200},
+    Increment = 1,
+    Suffix = " studs/s",
+    CurrentValue = 16,
+    Flag = "WalkSpeed",
+    Callback = function(Value)
+        local Character = LocalPlayer.Character
+        if Character and Character:FindFirstChild("Humanoid") then
+            Character.Humanoid.WalkSpeed = Value
+        end
+    end
+})
+
+local SliderJumpPower = TabMisc:CreateSlider({
+    Name = "JumpPower",
+    Range = {50, 500},
+    Increment = 10,
+    Suffix = " studs",
+    CurrentValue = 50,
+    Flag = "JumpPower",
+    Callback = function(Value)
+        local Character = LocalPlayer.Character
+        if Character and Character:FindFirstChild("Humanoid") then
+            Character.Humanoid.JumpPower = Value
+        end
+    end
+})
+
+-- Anti AFK цикл
+task.spawn(function()
+    while true do
+        task.wait(60)
+        if getgenv().AntiAFK then
+            local VirtualUser = game:GetService("VirtualUser")
+            VirtualUser:CaptureController()
+            VirtualUser:ClickButton2(Vector2.new())
+        end
+    end
+end)
+
+-- Уведомление о загрузке
+Rayfield:Notify({
+    Title = "GUI Loaded",
+    Content = "Anime Fighters Simulator GUI успешно загружен",
+    Duration = 5
+})
